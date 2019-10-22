@@ -8,7 +8,8 @@ const browserSync = require('browser-sync').create();
 const gulp_watch = require('gulp-watch');
 const gulp_ts = require('gulp-typescript');
 const gulp_clean = require('gulp-clean');
-
+const path = require('path');
+const glob = require('glob');
 
 
 gulp.task('build-html', buildHtml);
@@ -23,12 +24,12 @@ gulp.task('browser', () => {
   browserSync.init({
     server: './dist'
   });
-  gulp_watch('src/ts/*.ts',
+  gulp_watch(getEntry('src/ts/*.ts'),
     gulp.series('build-js', () => {
       browserSync.reload();
     })
   );
-  gulp_watch('src/pages/*html',
+  gulp_watch(getEntry('src/pages/*.html'),
     gulp.series('build-html', () => {
       browserSync.reload();
     })
@@ -67,3 +68,11 @@ function buildJs() {
     .js
     .pipe(gulp.dest('dist/js/'))
 }
+
+function getEntry(filepath) {
+  try {
+    return glob.sync(filepath);
+  } catch (e) {
+    console.log(e);
+  }
+};
