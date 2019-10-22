@@ -6,10 +6,12 @@ const gulp_clean_css = require("gulp-clean-css");
 const gulp_htmlmin = require("gulp-htmlmin");
 const browserSync = require('browser-sync').create();
 const gulp_watch = require('gulp-watch');
-const gulp_ts = require('gulp-typescript');
-const gulp_clean = require('gulp-clean');
 const path = require('path');
 const glob = require('glob');
+
+const browserify = require("browserify");
+const tsify = require("tsify");
+const source = require('vinyl-source-stream');
 
 
 gulp.task('build-html', buildHtml);
@@ -52,7 +54,7 @@ function buildLess() {
 
 function buildCss() {
   return gulp.src('src/css/*.css')
-    .pipe(gulp_concat('boudle.css'))
+    .pipe(gulp_concat('bundle.css'))
     .pipe(gulp_clean_css({
       compatibility: 'ie8',
     }))
@@ -60,13 +62,17 @@ function buildCss() {
 }
 
 function buildJs() {
-  return gulp.src('src/ts/*.ts')
-    .pipe(gulp_ts({
-      noImplicitAny: false,
-      out: 'boudle.js'
-    }))
-    .js
-    .pipe(gulp.dest('dist/js/'))
+  return browserify({
+      basedir: '.',
+      debug: true,
+      entries: ['src/ts/index.ts'],
+      cache: {},
+      packageCache: {}
+    })
+    .plugin(tsify)
+    .bundle()
+    .pipe(source('bundle.js'))
+    .pipe(gulp.dest("dist/js/"));
 }
 
 function getEntry(filepath) {

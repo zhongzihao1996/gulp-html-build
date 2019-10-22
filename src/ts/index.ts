@@ -1,3 +1,9 @@
-// console.log('abc');
-console.log('abc');
+import shape = require("./shape");
+class Circle implements shape.shape {
+    public draw(): void {
+        console.log("Cirlce is drawn (external module)");
+    }
+}
 
+let circle = new Circle();
+circle.draw();
