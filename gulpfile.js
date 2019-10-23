@@ -17,15 +17,15 @@ const gulp_revCollector = require('gulp-rev-collector-dxb') // 替换成版本�
 const del = require('del');
 
 gulp.task('clean-html', () => {
-  return del(glob.sync('/dist/*.html'))
+  return del(glob.sync('/dist/*.html'));
 })
 
 gulp.task('clean-css', () => {
-  return del(['dist/css'])
+  return del(['dist/css']);
 })
 
-gulp.task('clean-js', () => {
-  return del(['dist/js'])
+gulp.task('clean-js', async () => {
+  return del(['dist/js']);
 })
 
 gulp.task('build-html', gulp.series('clean-html', buildHtml));
@@ -84,22 +84,26 @@ function buildHtml() {
     .pipe(gulp.dest('dist/'));
 }
 
-function buildCss() {
-  return gulp
-    .src('src/pages/*.less')
-    .pipe(gulp_less())
-    .pipe(gulp_autoprefixer({
-      overrideBrowserslist: [
-        "Android 4.1",
-        "iOS 7.1",
-        "Chrome > 31",
-        "ff > 31",
-        "ie >= 8"
-      ],
-      grid: true,
-    }))
-    .pipe(gulp_concat('bundle.css'))
-    .pipe(gulp.dest('dist/css'));
+async function buildCss() {
+  let entries = getEntry('src/pages/*.less');
+  let keys = Object.keys(entries);
+  for (let i = 0, len = keys.length; i < len; i++) {
+    await gulp
+      .src(entries[keys[i]])
+      .pipe(gulp_less())
+      .pipe(gulp_autoprefixer({
+        overrideBrowserslist: [
+          "Android 4.1",
+          "iOS 7.1",
+          "Chrome > 31",
+          "ff > 31",
+          "ie >= 8"
+        ],
+        grid: true,
+      }))
+      .pipe(gulp_concat(`${keys[i]}.css`))
+      .pipe(gulp.dest('dist/css'));
+  }
 }
 
 async function buildJs() {
