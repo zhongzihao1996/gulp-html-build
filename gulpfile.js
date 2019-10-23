@@ -5,6 +5,7 @@ const gulp_less = require('gulp-less');
 const gulp_autoprefixer = require('gulp-autoprefixer');
 const browserSync = require('browser-sync').create();
 const gulp_watch = require('gulp-watch');
+const path = require('path');
 const glob = require('glob');
 const browserify = require('browserify');
 const tsify = require('tsify');
@@ -16,9 +17,7 @@ const gulp_revCollector = require('gulp-rev-collector-dxb') // 替换成版本�
 
 gulp.task('build-html', buildHtml);
 
-gulp.task('build-less', buildLess);
-
-gulp.task('build-css', gulp.series('build-less', buildCss));
+gulp.task('build-css', buildCss);
 
 gulp.task('build-js', buildJs);
 
@@ -31,19 +30,19 @@ gulp.task('browser', () => {
     server: './dist',
   });
   gulp_watch(
-    getEntry('src/ts/*.ts'),
+    glob.sync('src/entrys/*.ts'),
     gulp.series('build-js', () => {
       browserSync.reload();
     })
   );
   gulp_watch(
-    getEntry('src/less/*.less'),
+    glob.sync('src/pages/*.less'),
     gulp.series('build-css', () => {
       browserSync.reload();
     })
   );
   gulp_watch(
-    getEntry('src/pages/**/*.html'),
+    glob.sync('src/**/*.html'),
     gulp.series('build-html', () => {
       browserSync.reload();
     })
@@ -58,7 +57,7 @@ function buildHtml() {
     .pipe(
       htmltpl({
         tag: 'template',
-        paths: ['src/pages/components/'],
+        paths: ['src/components/'],
         engine(template, data) {
           return template && artTemplate.compile(template)(data);
         },
@@ -72,16 +71,10 @@ function buildHtml() {
     .pipe(gulp.dest('dist/'));
 }
 
-function buildLess() {
-  return gulp
-    .src('src/less/*.less')
-    .pipe(gulp_less())
-    .pipe(gulp.dest('src/css/'));
-}
-
 function buildCss() {
   return gulp
-    .src('src/css/*.css')
+    .src('src/pages/*.less')
+    .pipe(gulp_less())
     .pipe(gulp_autoprefixer({
       overrideBrowserslist: [
         "Android 4.1",
@@ -96,18 +89,20 @@ function buildCss() {
     .pipe(gulp.dest('dist/css'));
 }
 
-function buildJs() {
-  return browserify({
-      basedir: '.',
-      debug: true,
-      entries: ['src/ts/index.ts'],
-      cache: {},
-      packageCache: {},
-    })
-    .plugin(tsify)
-    .bundle()
-    .pipe(source('bundle.js'))
-    .pipe(gulp.dest('dist/js/'));
+async function buildJs() {
+  let entries = getEntry('src/entrys/*.ts');
+  let keys = Object.keys(entries);
+  for (let i = 0, len = keys.length; i < len; i++) {
+    await browserify({
+        entries: entries[keys[i]],
+        cache: {},
+        packageCache: {},
+      })
+      .plugin(tsify)
+      .bundle() // 转成node readabel stream流
+      .pipe(source(`${keys[i]}.js`))
+      .pipe(gulp.dest('dist/js/'));
+  }
 }
 
 function buildVersionJson() {
@@ -130,9 +125,16 @@ function setHtmlVersion() {
 }
 
 function getEntry(filepath) {
+  const entries = {};
   try {
-    return glob.sync(filepath);
+    glob.sync(filepath).forEach(file => {
+      const basename = path.basename(file, path.extname(file));
+      entries[basename] = file;
+    });
+    // console.log(entries);
+    return entries;
   } catch (e) {
     console.log(e);
+    throw e
   }
 }
