@@ -14,12 +14,25 @@ const htmltpl = require('gulp-html-tpl'); // 引用html模板
 const artTemplate = require('art-template'); // 模板渲染
 const gulp_rev_dxb = require('gulp-rev-dxb'); // 生成版本号清单
 const gulp_revCollector = require('gulp-rev-collector-dxb') // 替换成版本号文件
+const del = require('del');
 
-gulp.task('build-html', buildHtml);
+gulp.task('clean-html', () => {
+  return del(glob.sync('/dist/*.html'))
+})
 
-gulp.task('build-css', buildCss);
+gulp.task('clean-css', () => {
+  return del(['dist/css'])
+})
 
-gulp.task('build-js', buildJs);
+gulp.task('clean-js', () => {
+  return del(['dist/js'])
+})
+
+gulp.task('build-html', gulp.series('clean-html', buildHtml));
+
+gulp.task('build-css', gulp.series('clean-css', buildCss));
+
+gulp.task('build-js', gulp.series('clean-js', buildJs));
 
 gulp.task('build-version-json', buildVersionJson);
 
