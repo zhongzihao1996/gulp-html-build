@@ -8,6 +8,7 @@
     "art-template": "^4.13.2",
     "browser-sync": "^2.26.7",
     "browserify": "^16.5.0",
+    "colors": "^1.4.0",
     "del": "^5.1.0",
     "engine.io-parser": "^2.2.0",
     "fsevents": "^1.2.9",

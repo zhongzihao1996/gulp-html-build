@@ -1,4 +1,5 @@
 const gulp = require('gulp');
+const colors = require('colors');
 const gulp_htmlmin = require('gulp-htmlmin');
 const gulp_concat = require('gulp-concat');
 const gulp_less = require('gulp-less');
@@ -165,6 +166,7 @@ async function JsChange(file_path) {
     .bundle() // 转成node readabel stream流
     .pipe(source(`${file_name}.js`))
     .pipe(gulp.dest('dist/js/'));
+  console.log(colors.green(`[编译成功]`))
   browserSync.reload();
 }
 
@@ -186,6 +188,7 @@ async function CssChange(file_path) {
     }))
     .pipe(gulp_concat(`${file_name}.css`))
     .pipe(gulp.dest('dist/css'));
+  console.log(colors.green(`[编译成功]`))
   browserSync.reload();
 }
 
