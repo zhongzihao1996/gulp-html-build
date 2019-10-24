@@ -38,31 +38,27 @@ gulp.task('build-version-json', buildVersionJson);
 
 gulp.task('set-html-version', setHtmlVersion);
 
-gulp.task('browser', () => {
+gulp.task('watch-browser', () => {
   browserSync.init({
     server: './dist',
   });
-  gulp_watch(
-    glob.sync('src/entrys/*.ts'),
-    gulp.series('build-js', () => {
-      browserSync.reload();
-    })
-  );
-  gulp_watch(
-    glob.sync('src/pages/*.less'),
-    gulp.series('build-css', () => {
-      browserSync.reload();
-    })
-  );
   gulp_watch(
     glob.sync('src/**/*.html'),
     gulp.series('build-html', () => {
       browserSync.reload();
     })
   );
+  gulp_watch(glob.sync('src/pages/*.less'), (file) => {
+    CssChange(file.path);
+    browserSync.reload();
+  });
+  gulp_watch(glob.sync('src/entrys/*.ts'), (file) => {
+    JsChange(file.path);
+    browserSync.reload();
+  });
 });
 
-gulp.task('default', gulp.series('build-html', 'build-css', 'build-js', 'build-version-json', 'set-html-version', 'browser'));
+gulp.task('default', gulp.series('build-html', 'build-css', 'build-js', 'build-version-json', 'set-html-version', 'watch-browser'));
 
 function buildHtml() {
   return gulp
@@ -154,4 +150,45 @@ function getEntry(filepath) {
     console.log(e);
     throw e
   }
+}
+
+async function JsChange(file_path) {
+  let file_name = path.basename(file_path, path.extname(file_path));
+  // 先删除文件
+  await delFile(`dist/js/${file_name}.js`);
+  browserify({
+      entries: file_path,
+      cache: {},
+      packageCache: {},
+    })
+    .plugin(tsify)
+    .bundle() // 转成node readabel stream流
+    .pipe(source(`${file_name}.js`))
+    .pipe(gulp.dest('dist/js/'));
+  browserSync.reload();
+}
+
+async function CssChange(file_path) {
+  let file_name = path.basename(file_path, path.extname(file_path));
+  // 先删除文件
+  await delFile(`dist/css/${file_name}.css`);
+  gulp.src(file_path)
+    .pipe(gulp_less())
+    .pipe(gulp_autoprefixer({
+      overrideBrowserslist: [
+        "Android 4.1",
+        "iOS 7.1",
+        "Chrome > 31",
+        "ff > 31",
+        "ie >= 8"
+      ],
+      grid: true,
+    }))
+    .pipe(gulp_concat(`${file_name}.css`))
+    .pipe(gulp.dest('dist/css'));
+  browserSync.reload();
+}
+
+async function delFile(file_path) {
+  return await del(file_path);
 }
